@@ -18,7 +18,7 @@ def train_model(cat_dir, dog_dir):
     """Train a simple SVM model on cat and dog images"""
     features = []
     labels = []
-    
+
     # Process cat images
     for img_file in os.listdir(cat_dir):
         if img_file.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -62,12 +62,17 @@ def predict_image(image_path, model_path):
     try:
         with open(model_path, 'rb') as f:
             model = pickle.load(f)
-        
-        # Extract features
-        features = extract_features(image_path)
-        if features is None:
-            return None, 0
-        
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        return None, 0
+
+    # Extract features
+    features = extract_features(image_path)
+    print(features[:10])
+    if features is None:
+        return None, 0
+
+    try:
         # Make prediction
         prediction = model.predict([features])[0]
         probabilities = model.predict_proba([features])[0]
@@ -75,9 +80,11 @@ def predict_image(image_path, model_path):
         # Get confidence percentage for the prediction
         class_index = 0 if prediction == 'cat' else 1
         confidence = probabilities[class_index] * 100
-        
-        return prediction, confidence
-    
+
+        if confidence < 50:
+            return "uncertain", 0
+        else:
+            return prediction, confidence
     except Exception as e:
         print(f"Error predicting: {e}")
         return None, 0
